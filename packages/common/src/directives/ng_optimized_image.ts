@@ -189,6 +189,13 @@ export class NgOptimizedImage implements OnInit, OnChanges, OnDestroy {
   }
 
   /**
+   * The desired loading behavior (lazy, eager, or auto).
+   * The primary use case for this input is overriding the image directive's default loading
+   * behavior.
+   */
+  @Input() loading?: string;
+
+  /**
    * Indicates whether this image should have a high priority.
    */
   @Input()
@@ -215,6 +222,7 @@ export class NgOptimizedImage implements OnInit, OnChanges, OnDestroy {
       assertNotBlobURL(this);
       assertRequiredNumberInput(this, this.width, 'width');
       assertRequiredNumberInput(this, this.height, 'height');
+      assertValidLoadingInput(this);
       if (!this.priority) {
         // Monitor whether an image is an LCP element only in case
         // the `priority` attribute is missing. Otherwise, an image
@@ -239,6 +247,9 @@ export class NgOptimizedImage implements OnInit, OnChanges, OnDestroy {
   }
 
   private getLoadingBehavior(): string {
+    if (this.loading !== undefined && isNonEmptyString(this.loading)) {
+      return this.loading;
+    }
     return this.priority ? 'eager' : 'lazy';
   }
 
@@ -278,6 +289,12 @@ function inputToInteger(value: string|number|undefined): number|undefined {
 // Convert input value to boolean.
 function inputToBoolean(value: unknown): boolean {
   return value != null && `${value}` !== 'false';
+}
+
+function isNonEmptyString(value: unknown): boolean {
+  const isString = typeof value === 'string';
+  const isEmptyString = isString && value.trim() === '';
+  return isString && !isEmptyString;
 }
 
 /**
@@ -410,5 +427,17 @@ function assertRequiredNumberInput(dir: NgOptimizedImage, inputValue: unknown, i
         `${imgDirectiveDetails(dir)} has detected that the required \`${inputName}\` ` +
             `attribute is missing. Please specify the \`${inputName}\` attribute ` +
             `on the mentioned element.`);
+  }
+}
+
+// Verifies that the `loading` attribute is set to a valid input.
+function assertValidLoadingInput(dir: NgOptimizedImage) {
+  const validInputs = ['auto', 'eager', 'lazy'];
+  if (typeof dir.loading === 'string' && !validInputs.includes(dir.loading)) {
+    throw new RuntimeError(
+        RuntimeErrorCode.INVALID_INPUT,
+        `The NgOptimizedImage directive has detected that the \`loading\` attribute ` +
+            `has an invalid value: expecting "lazy", "eager", or "auto" but got: ` +
+            `\`${dir.loading}\`.`);
   }
 }

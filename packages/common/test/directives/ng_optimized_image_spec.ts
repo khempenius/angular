@@ -263,7 +263,44 @@ describe('Image directive', () => {
       expect(img.getAttribute('loading')).toBe('lazy');
     });
   });
+  describe('loading attribute', () => {
+    it('should override the default loading behavior for non-priority images', () => {
+      setupTestingModule();
 
+      const template = '<img rawSrc="path/img.png" width="150" height="50" loading="eager">';
+      const fixture = createTestComponent(template);
+      fixture.detectChanges();
+
+      const nativeElement = fixture.nativeElement as HTMLElement;
+      const img = nativeElement.querySelector('img')!;
+      expect(img.getAttribute('loading')).toBe('eager');
+    });
+    it('should override the default loading behavior for priority images', () => {
+      setupTestingModule();
+
+      const template =
+          '<img rawSrc="path/img.png" width="150" height="50" loading="lazy" priority>';
+      const fixture = createTestComponent(template);
+      fixture.detectChanges();
+
+      const nativeElement = fixture.nativeElement as HTMLElement;
+      const img = nativeElement.querySelector('img')!;
+      expect(img.getAttribute('loading')).toBe('lazy');
+    });
+    it('should throw for invalid loading inputs', () => {
+      setupTestingModule();
+
+      const template = '<img rawSrc="path/img.png" width="150" height="150" loading="fast">';
+      expect(() => {
+        const fixture = createTestComponent(template);
+        fixture.detectChanges();
+      })
+          .toThrowError(
+              'NG02951: The NgOptimizedImage directive has detected that the `loading` ' +
+              'attribute has an invalid value: expecting "lazy", "eager", or "auto"' +
+              ' but got: `fast`.');
+    });
+  });
   describe('fetch priority', () => {
     it('should be "high" for priority images', () => {
       setupTestingModule();
